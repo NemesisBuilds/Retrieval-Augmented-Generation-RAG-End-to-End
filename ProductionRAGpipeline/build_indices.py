@@ -29,7 +29,8 @@ encoding_model = SentenceTransformer("all-MiniLM-L6-v2")
 stemmer = PorterStemmer()
 all_files = os.listdir(DATA_FOLDER_PATH)
 english_stopwords = set(stopwords.words("english"))
-
+for path in [VECTOR_STORAGE_FOLDER_PATH, BM25_FOLDER_STORAGE_PATH]:
+    path.mkdir(parents=True, exist_ok=True)
 
 def extract_text(file_paths: list):
     """
