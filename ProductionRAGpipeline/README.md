@@ -1,21 +1,19 @@
-Hybrid RAG System (FAISS + BM25 + CrossEncoder)
+# Hybrid RAG System (FAISS + BM25 + CrossEncoder)
 
 This project implements a complete Retrieval-Augmented Generation (RAG) pipeline with multiple retrieval improvements including:
 
-Dataset Routing
+- Dataset Routing
+- Hybrid Search (Dense + Sparse Retrieval)
+- Cross-Encoder Reranking
+- LLM Answer Generation
 
-Hybrid Search (Dense + Sparse Retrieval)
+The system efficiently searches across multiple document collections, retrieves relevant chunks, and generates answers using an LLM.
 
-Cross-Encoder Reranking
+---
 
-LLM Answer Generation
+# Architecture Overview
 
-The system is designed to efficiently search across multiple document collections, retrieve the most relevant text chunks, and generate answers using a language model.
-
-Architecture Overview
-
-The retrieval pipeline consists of four major stages:
-
+```
 User Query
     │
     ▼
@@ -37,72 +35,89 @@ Top Context Chunks
     │
     ▼
 LLM Generation
-Key Features
-1. Dataset Router
+```
 
-Instead of searching every document collection, the system first determines which datasets are relevant.
+---
 
-Uses KMeans clustering to generate centroid vectors for each dataset
+# Key Features
 
-Stores them inside a router FAISS index
+## 1. Dataset Router
 
-Query embeddings are matched against these centroids
+Instead of searching the entire corpus, the system first determines which datasets are relevant.
 
-This significantly reduces unnecessary search space.
+- Uses **KMeans clustering** to generate centroid vectors
+- Stores centroids inside a **router FAISS index**
+- Query embeddings are matched against these centroids
 
-2. Hybrid Retrieval (Dense + Sparse)
+This significantly reduces search space.
 
-The system combines two retrieval approaches:
+---
 
-Dense Retrieval
+## 2. Hybrid Retrieval (Dense + Sparse)
 
-Uses:
+The system combines two retrieval methods.
 
-Sentence Transformers (all-MiniLM-L6-v2)
-
-FAISS vector similarity search
-
-Captures semantic similarity between queries and document chunks.
-
-Sparse Retrieval
+### Dense Retrieval
 
 Uses:
 
-BM25 lexical search
+- Sentence Transformers (`all-MiniLM-L6-v2`)
+- FAISS similarity search
 
-Tokenization + stopword removal + stemming
+Captures **semantic similarity between queries and chunks**.
 
-Captures keyword matching signals.
+### Sparse Retrieval
 
-3. Retrieval Rank Fusion (RRF)
+Uses:
 
-Results from FAISS and BM25 are combined using Reciprocal Rank Fusion:
+- **BM25 lexical search**
+- Tokenization
+- Stopword removal
+- Stemming
 
+Captures **keyword matching signals**.
+
+---
+
+## 3. Retrieval Rank Fusion (RRF)
+
+Results from FAISS and BM25 are combined using **Reciprocal Rank Fusion**.
+
+```
 RRF Score = 1 / (k + rank)
+```
 
-This approach is robust because it combines rankings without requiring score normalization.
+This method is robust because it combines rankings without needing score normalization.
 
-4. Cross-Encoder Reranking
+---
 
-The top retrieved candidates are reranked using:
+## 4. Cross-Encoder Reranking
 
+Top candidates are reranked using:
+
+```
 cross-encoder/ms-marco-MiniLM-L-6-v2
+```
 
-Unlike embedding models, a CrossEncoder jointly evaluates the query and document, producing more accurate relevance scores.
+Unlike embedding models, a **CrossEncoder evaluates the query and document together**, producing more accurate relevance scores.
 
-5. LLM Answer Generation
+---
+
+## 5. LLM Answer Generation
 
 After reranking:
 
-Top chunks are combined into a context block
+1. Top chunks are combined into a **context block**
+2. A **prompt template** is created
+3. The prompt is sent to an **LLM (Groq API)**
 
-A prompt template is created
+The model is instructed to **answer strictly using the retrieved context**.
 
-The prompt is sent to a Groq-hosted LLM
+---
 
-The model is instructed to answer strictly using the retrieved context.
+# Project Structure
 
-Project Structure
+```
 .
 ├── sample_data/
 │   ├── dataset1.txt
@@ -123,27 +138,31 @@ Project Structure
 ├── rag_pipeline.py
 │
 └── README.md
-Index Building Pipeline
+```
 
-The system builds the retrieval infrastructure through the following steps:
+---
 
-Document Ingestion
+# Index Building Pipeline
 
-Chunking (RecursiveCharacterTextSplitter)
+The retrieval infrastructure is built through the following steps:
 
-Embedding Generation
+1. Document ingestion  
+2. Chunking (RecursiveCharacterTextSplitter)  
+3. Embedding generation  
+4. KMeans clustering  
+5. Router index construction  
+6. FAISS index creation  
+7. BM25 index creation  
 
-KMeans Clustering
+All indices are **stored on disk to avoid recomputation**.
 
-Router Index Construction
+---
 
-FAISS Index Creation
+# Installation
 
-BM25 Index Creation
+Install dependencies:
 
-All indices are stored on disk to avoid recomputation.
-
-Installation
+```bash
 pip install faiss-cpu
 pip install sentence-transformers
 pip install rank-bm25
@@ -151,87 +170,80 @@ pip install nltk
 pip install scikit-learn
 pip install langchain-text-splitters
 pip install groq
+```
 
-Download stopwords:
+Download NLTK stopwords:
 
+```python
 import nltk
 nltk.download("stopwords")
-Running the System
-Step 1 — Add documents
+```
 
-Place .txt files inside:
+---
 
+# Running the System
+
+## 1. Add documents
+
+Place `.txt` files inside:
+
+```
 sample_data/
-Step 2 — Build indices
+```
+
+---
+
+## 2. Build indices
 
 Run:
 
+```bash
 python build_indices.py
+```
 
-This will create:
+This creates:
 
-FAISS indices
+- FAISS indices
+- BM25 indices
+- Router index
 
-BM25 indices
+---
 
-Router index
+## 3. Run the RAG pipeline
 
-Step 3 — Run the RAG pipeline
+```bash
 python rag_pipeline.py
+```
 
 Example:
 
+```
 User: What is reinforcement learning?
 
 Answer: ...
-Technologies Used
+```
 
-FAISS – dense vector search
+---
 
-Sentence Transformers – embedding generation
+# Technologies Used
 
-BM25 (rank-bm25) – lexical search
+- **FAISS** – dense vector search  
+- **Sentence Transformers** – embeddings  
+- **BM25 (rank-bm25)** – lexical search  
+- **CrossEncoder** – reranking  
+- **KMeans (scikit-learn)** – dataset routing  
+- **Groq API** – LLM inference  
+- **LangChain Text Splitters** – document chunking  
 
-CrossEncoder – reranking
+---
 
-KMeans (scikit-learn) – dataset routing
+# Future Improvements
 
-Groq API – LLM inference
+Potential extensions:
 
-LangChain Text Splitters – document chunking
-
-Why This Architecture Matters
-
-Traditional RAG pipelines struggle with:
-
-searching large multi-dataset corpora
-
-balancing semantic and lexical retrieval
-
-ranking noisy chunks
-
-This implementation improves retrieval quality by combining:
-
-Routing
-
-Hybrid Search
-
-Rank Fusion
-
-Cross-Encoder Reranking
-
-Possible Improvements
-
-Future extensions could include:
-
-Query rewriting
-
-Multi-query retrieval
-
-Metadata filtering
-
-Chunk deduplication
-
-Streaming LLM responses
-
-Evaluation with RAG benchmarks
+- Query rewriting  
+- Multi-query retrieval  
+- Metadata filtering  
+- Chunk deduplication  
+- Streaming LLM responses  
+- RAG evaluation benchmarks
