@@ -26,6 +26,10 @@ english_stopwords = set(stopwords.words("english"))
 model_name = 'cross-encoder/ms-marco-MiniLM-L-6-v2'
 reranker = CrossEncoder(model_name)
 groq_llm = Groq(api_key="YOUR_API_KEY")
+for path in [VECTOR_STORAGE_FOLDER_PATH, BM25_FOLDER_STORAGE_PATH]:
+    path.mkdir(parents=True, exist_ok=True)
+
+
 
 def LLM(prompt: str, max_tokens: int = 256):
     """
