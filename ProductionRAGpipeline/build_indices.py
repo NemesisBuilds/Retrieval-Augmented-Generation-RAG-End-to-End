@@ -437,12 +437,12 @@ def Build_Both_Indices(data_folder_path: str):
 
     build_router_index(router_vectors=all_centroids,
                        router_metadata=all_centroids_metadata) 
-    """    #Building FAISS indices:- 
+    #Building FAISS indices:- 
     all_files_faiss_indices = build_faiss_index(embeddings_dict=all_files_data_embeddings) #list[dict]
     parent_indices_dict["faiss_indices"] = all_files_faiss_indices
     #Building BM25 indices:-
     all_files_bm25_indices = build_bm25_index(entries=all_files_data_chunks)#list[dict]
-    parent_indices_dict["bm25_indices"] = all_files_bm25_indices"""
+    parent_indices_dict["bm25_indices"] = all_files_bm25_indices
     return parent_indices_dict
 
 Build_Both_Indices(data_folder_path=DATA_FOLDER_PATH)
