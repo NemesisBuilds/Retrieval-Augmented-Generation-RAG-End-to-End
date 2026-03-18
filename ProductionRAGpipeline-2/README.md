@@ -164,7 +164,7 @@ This system follows a **"coarse → fine" retrieval strategy**:
 
 ---
 
-## Limitations (Be Honest)
+## Limitations
 
 - Token-level encoding is slow (not optimized like real ColBERT)
 - Chunking is static (not adaptive)
